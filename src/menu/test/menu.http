@@ -1,0 +1,30 @@
+@server = http://localhost:3000
+@testId = 66c166baa91ce12dd9da5c94
+
+
+# 메뉴 조회
+GET {{server}}/menu
+
+### id로 메뉴 조회
+GET {{server}}/menu/{{testId}}
+
+### 메뉴 추가
+POST {{server}}/menu
+Content-Type: application/json
+
+{
+  "name": "아이스아메리카노",
+  "price": 4000,
+  "enable": true
+}
+
+### 메뉴 수정
+PATCH {{server}}/menu/{{testId}}
+Content-Type: application/json
+
+{
+  "price": 3000
+}
+
+### 메뉴 삭제
+DELETE {{server}}/menu/66c168b0ef377fa85acabe0a

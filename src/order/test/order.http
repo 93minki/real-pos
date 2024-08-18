@@ -1,0 +1,27 @@
+@server = http://localhost:3000
+
+# 주문 조회
+GET {{server}}/order
+
+### 주문 추가
+POST {{server}}/order
+Content-Type: application/json
+
+{ 
+  "items": [
+    {
+      "name": "아이스아메리카노",
+      "price": 4000,
+      "quantity": 2
+    },
+    {
+      "name": "카페라떼",
+      "price": 4000,
+      "quantity": 1
+    }
+  ]
+}
+
+### 주문 삭제
+DELETE {{server}}/order/66c1797ed872e7c40c2b9417
+
