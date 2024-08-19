@@ -1,4 +1,4 @@
-@server = http://localhost:3000
+@server = http://localhost:8080
 
 # 주문 조회
 GET {{server}}/order

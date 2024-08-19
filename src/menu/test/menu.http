@@ -1,4 +1,4 @@
-@server = http://localhost:3000
+@server = http://localhost:8080
 @testId = 66c166baa91ce12dd9da5c94
 
 
