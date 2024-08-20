@@ -7,6 +7,9 @@ export type OrderDocument = Order & Document;
 export class Order {
   @Prop([{ name: String, price: Number, quantity: Number }])
   items: { name: string; price: number; quantity: number }[];
+
+  @Prop({ default: true })
+  active: boolean;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);

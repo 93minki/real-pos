@@ -12,7 +12,7 @@ export class Menu {
   price: number;
 
   @Prop({ default: true })
-  enable: boolean;
+  active: boolean;
 }
 
 export const MenuSchema = SchemaFactory.createForClass(Menu);
