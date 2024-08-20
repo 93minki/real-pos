@@ -40,12 +40,11 @@ export class OrderController {
     return this.orderService.deleteOrder(id);
   }
 
-  @Patch()
+  @Patch('/:id')
   updateOrder(
-    @Query('date') date: string,
-    @Query('time') time: string,
-    @Body() items: OrderDto['items'],
+    @Param('id') id: string,
+    @Body() items: OrderDto
   ) {
-    return this.orderService.updateOrder(date, time, items);
+    return this.orderService.updateOrder(id, items);
   }
 }

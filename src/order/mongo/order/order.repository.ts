@@ -10,11 +10,7 @@ export interface OrderRepository {
   getOrderByDate(date: string): Promise<Order[]>;
   addOrder(orderDto: OrderDto): Promise<OrderDto>;
   deleteOrder(date: string, time: string): Promise<OrderDto>;
-  updateOrder(
-    date: string,
-    time: string,
-    items: OrderDto['items'],
-  ): Promise<OrderDto>;
+  updateOrder(id: string, items: OrderDto): Promise<OrderDto>;
 }
 
 @Injectable()
@@ -40,13 +36,9 @@ export class OrderMongoRepository implements OrderRepository {
     return await this.orderModel.findByIdAndDelete(id).exec();
   }
 
-  async updateOrder(
-    date: string,
-    time: string,
-    items: OrderDto['items'],
-  ): Promise<OrderDto> {
+  async updateOrder(id: string, items: OrderDto): Promise<OrderDto> {
     return await this.orderModel
-      .findOneAndUpdate({ date, time }, { items }, { new: true })
+      .findByIdAndUpdate(id, { items }, { new: true })
       .exec();
   }
 

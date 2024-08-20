@@ -9,7 +9,7 @@ export class Order {
   items: { name: string; price: number; quantity: number }[];
 
   @Prop({ default: true })
-  active: boolean;
+  active?: boolean;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);

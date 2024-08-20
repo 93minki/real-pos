@@ -22,8 +22,8 @@ export class OrderService {
     return await this.orderRepository.deleteOrder(id);
   }
 
-  async updateOrder(date: string, time: string, items: OrderDto['items']) {
-    return await this.orderRepository.updateOrder(date, time, items);
+  async updateOrder(id: string, items: OrderDto) {
+    return await this.orderRepository.updateOrder(id, items);
   }
 
   async getAllOrders() {
