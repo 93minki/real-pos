@@ -38,12 +38,11 @@ export class OrderMongoRepository implements OrderRepository {
 
   async updateOrder(id: string, orderDto: OrderDto): Promise<OrderDto> {
     const updateData: Partial<OrderDto> = {};
-
     if (orderDto.items) {
       updateData.items = orderDto.items;
     }
 
-    if (orderDto.active) {
+    if (orderDto.active !== undefined) {
       updateData.active = orderDto.active;
     }
 
