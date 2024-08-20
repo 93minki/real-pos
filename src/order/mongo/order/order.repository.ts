@@ -36,9 +36,9 @@ export class OrderMongoRepository implements OrderRepository {
     return await this.orderModel.findByIdAndDelete(id).exec();
   }
 
-  async updateOrder(id: string, items: OrderDto): Promise<OrderDto> {
+  async updateOrder(id: string, orderDto: OrderDto): Promise<OrderDto> {
     return await this.orderModel
-      .findByIdAndUpdate(id, { items }, { new: true })
+      .findByIdAndUpdate(id, { items: orderDto.items }, { new: true })
       .exec();
   }
 
