@@ -22,8 +22,8 @@ export class OrderService {
     return await this.orderRepository.deleteOrder(id);
   }
 
-  async updateOrder(id: string, items: OrderDto) {
-    return await this.orderRepository.updateOrder(id, items);
+  async updateOrder(id: string, orderDto: OrderDto) {
+    return await this.orderRepository.updateOrder(id, orderDto);
   }
 
   async getAllOrders() {

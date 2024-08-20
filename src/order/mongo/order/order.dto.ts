@@ -5,6 +5,6 @@ export interface OrderItemDto {
 }
 
 export interface OrderDto {
-  items: OrderItemDto[];
+  items?: OrderItemDto[];
   active?: boolean;
 }
