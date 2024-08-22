@@ -7,4 +7,5 @@ export interface OrderItemDto {
 export interface OrderDto {
   items?: OrderItemDto[];
   active?: boolean;
+  totalPrice?: number;
 }

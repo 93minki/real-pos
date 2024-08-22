@@ -62,6 +62,10 @@ export class OrderMongoRepository implements OrderRepository {
     if (orderDto.active !== undefined) {
       updateData.active = orderDto.active;
     }
+
+    if (orderDto.totalPrice) {
+      updateData.totalPrice = orderDto.totalPrice;
+    }
     console.log('updateData', updateData);
 
     return await this.orderModel

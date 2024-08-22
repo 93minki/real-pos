@@ -10,6 +10,9 @@ export class Order {
 
   @Prop({ default: true })
   active?: boolean;
+
+  @Prop()
+  totalPrice?: number;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);
