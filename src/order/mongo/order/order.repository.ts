@@ -7,6 +7,7 @@ import { Order, OrderDocument } from './order.schema';
 export interface OrderRepository {
   getAllOrders(): Promise<OrderDto[]>;
   getOrder(date: string, time: string): Promise<Order>;
+  getTodayOrder(): Promise<OrderDto[]>;
   getOrderByDate(date: string): Promise<Order[]>;
   addOrder(orderDto: OrderDto): Promise<OrderDto>;
   deleteOrder(date: string, time: string): Promise<OrderDto>;
@@ -32,11 +33,27 @@ export class OrderMongoRepository implements OrderRepository {
     return await this.orderModel.findOne({ date, time }).exec();
   }
 
+  async getTodayOrder(): Promise<OrderDto[]> {
+    const today = new Date();
+    const start = new Date(today.setHours(0, 0, 0, 0));
+    const end = new Date(today.setHours(23, 59, 59, 999));
+
+    return await this.orderModel
+      .find({
+        updatedAt: {
+          $gte: start,
+          $lt: end,
+        },
+      })
+      .exec();
+  }
+
   async deleteOrder(id: String): Promise<OrderDto> {
     return await this.orderModel.findByIdAndDelete(id).exec();
   }
 
   async updateOrder(id: string, orderDto: OrderDto): Promise<OrderDto> {
+    console.log('orderDto', orderDto);
     const updateData: Partial<OrderDto> = {};
     if (orderDto.items) {
       updateData.items = orderDto.items;
@@ -45,6 +62,7 @@ export class OrderMongoRepository implements OrderRepository {
     if (orderDto.active !== undefined) {
       updateData.active = orderDto.active;
     }
+    console.log('updateData', updateData);
 
     return await this.orderModel
       .findByIdAndUpdate(id, updateData, { new: true })

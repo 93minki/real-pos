@@ -20,6 +20,11 @@ export class OrderController {
     return this.orderService.getAllOrders();
   }
 
+  @Get('today')
+  getTodayOrder() {
+    return this.orderService.getTodayOrder();
+  }
+
   @Get('/filter/date')
   getOrderByDate(@Query('date') date: string) {
     return this.orderService.getOrderByDate(date);

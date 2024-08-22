@@ -10,6 +10,10 @@ export class OrderService {
     return await this.orderRepository.addOrder(orderDto);
   }
 
+  async getTodayOrder() {
+    return await this.orderRepository.getTodayOrder();
+  }
+
   async getOrderByDate(date: string) {
     return await this.orderRepository.getOrderByDate(date);
   }
