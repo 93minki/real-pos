@@ -26,7 +26,13 @@ export class OrderMongoRepository implements OrderRepository {
   }
 
   async getOrderByDate(date: string): Promise<OrderDto[]> {
-    return await this.orderModel.find({ date }).exec();
+    const startDate = new Date(`${date}-01`);
+    const endDate = new Date(startDate);
+    endDate.setMonth(startDate.getMonth() + 1);
+
+    return await this.orderModel
+      .find({ updatedAt: { $gte: startDate, $lt: endDate } })
+      .exec();
   }
 
   async getOrder(date: string, time: string): Promise<OrderDto> {

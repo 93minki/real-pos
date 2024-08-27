@@ -25,7 +25,7 @@ export class OrderController {
     return this.orderService.getTodayOrder();
   }
 
-  @Get('/filter/date')
+  @Get('/filter')
   getOrderByDate(@Query('date') date: string) {
     return this.orderService.getOrderByDate(date);
   }
