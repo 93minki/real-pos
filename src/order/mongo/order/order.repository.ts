@@ -8,7 +8,7 @@ export interface OrderRepository {
   getAllOrders(): Promise<OrderDto[]>;
   getOrder(date: string, time: string): Promise<Order>;
   getTodayOrder(): Promise<OrderDto[]>;
-  getOrderByDate(date: string): Promise<Order[]>;
+  getOrderByMonth(month: string): Promise<Order[]>;
   addOrder(orderDto: OrderDto): Promise<OrderDto>;
   deleteOrder(date: string, time: string): Promise<OrderDto>;
   updateOrder(id: string, items: OrderDto): Promise<OrderDto>;
@@ -25,8 +25,8 @@ export class OrderMongoRepository implements OrderRepository {
     return await newOrder.save();
   }
 
-  async getOrderByDate(date: string): Promise<OrderDto[]> {
-    const startDate = new Date(`${date}-01`);
+  async getOrderByMonth(month: string): Promise<OrderDto[]> {
+    const startDate = new Date(`${month}-01`);
     const endDate = new Date(startDate);
     endDate.setMonth(startDate.getMonth() + 1);
 

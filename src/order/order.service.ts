@@ -14,8 +14,8 @@ export class OrderService {
     return await this.orderRepository.getTodayOrder();
   }
 
-  async getOrderByDate(date: string) {
-    return await this.orderRepository.getOrderByDate(date);
+  async getOrderByMonth(month: string) {
+    return await this.orderRepository.getOrderByMonth(month);
   }
 
   async getOrder(date: string, time: string) {

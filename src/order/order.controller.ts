@@ -26,8 +26,8 @@ export class OrderController {
   }
 
   @Get('/filter')
-  getOrderByDate(@Query('date') date: string) {
-    return this.orderService.getOrderByDate(date);
+  getOrderByMonth(@Query('month') month: string) {
+    return this.orderService.getOrderByMonth(month);
   }
 
   @Get('filter/date-time')
