@@ -16,6 +16,9 @@ export class User {
   @Column()
   username: string;
 
+  @Column({ nullable: true })
+  rt?: string;
+
   @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
   createdDt: Date = new Date();
 
