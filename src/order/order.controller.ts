@@ -1,64 +1,61 @@
-import { Body, Controller, Get, Post, Query } from '@nestjs/common';
-import { CreateOrderDto } from './order.dto';
+// order.controller.ts
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
+  Put,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import { Request } from 'express';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CreateOrderDto, UpdateOrderDto } from './order.dto';
 import { OrderService } from './order.service';
 
-@Controller('order')
+@UseGuards(JwtAuthGuard)
+@Controller('orders')
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
+  // 주문 생성
   @Post()
-  async createOrder(@Body() dto: CreateOrderDto) {
-    return this.orderService.createOrder(dto);
+  async createOrder(@Body() dto: CreateOrderDto, @Req() req: Request) {
+    const user = req.user as { id: number; email: string };
+    return this.orderService.createOrder(dto, user);
   }
 
-  @Get('stats')
-  async getOrdersByDateRange(
-    @Query('startDate') startDate: string,
-    @Query('endDate') endDate: string,
+  // 내 주문 전체 조회
+  @Get()
+  async getOrders(@Req() req: Request) {
+    const user = req.user as { id: number; email: string };
+    return this.orderService.getOrders(user);
+  }
+
+  // 내 주문 단건 조회
+  @Get(':id')
+  async getOrderById(@Param('id') id: number, @Req() req: Request) {
+    const user = req.user as { id: number; email: string };
+    return this.orderService.getOrderById(Number(id), user);
+  }
+
+  // 주문 수정
+  @Put(':id')
+  async updateOrder(
+    @Param('id') id: number,
+    @Body() dto: UpdateOrderDto,
+    @Req() req: Request,
   ) {
-    return this.orderService.getOrdersByDateRange(
-      new Date(startDate),
-      new Date(endDate),
-    );
+    const user = req.user as { id: number; email: string };
+    return this.orderService.updateOrder(Number(id), dto, user);
+  }
+
+  // 주문 삭제
+  @Delete(':id')
+  async deleteOrder(@Param('id') id: number, @Req() req: Request) {
+    const user = req.user as { id: number; email: string };
+    return this.orderService.deleteOrder(Number(id), user);
   }
 }
-
-// @Controller('order')
-// export class OrderController {
-//   constructor(private readonly orderService: OrderService) {}
-
-//   @Get()
-//   getAllOrder() {
-//     return this.orderService.getAllOrders();
-//   }
-
-//   @Get('today')
-//   getTodayOrder() {
-//     return this.orderService.getTodayOrder();
-//   }
-
-//   @Get('/filter')
-//   getOrderByMonth(@Query('month') month: string) {
-//     return this.orderService.getOrderByMonth(month);
-//   }
-
-//   @Get('filter/date-time')
-//   getOrder(@Query('date') date: string, @Query('time') time: string) {
-//     return this.orderService.getOrder(date, time);
-//   }
-
-//   @Post()
-//   addOrder(@Body() orderDto: OrderDto) {
-//     return this.orderService.addOrder(orderDto);
-//   }
-
-//   @Delete('/:id')
-//   deleteOrder(@Param('id') id: string) {
-//     return this.orderService.deleteOrder(id);
-//   }
-
-//   @Patch('/:id')
-//   updateOrder(@Param('id') id: string, @Body() orderDto: OrderDto) {
-//     return this.orderService.updateOrder(id, orderDto);
-//   }
-// }

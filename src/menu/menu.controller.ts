@@ -1,53 +1,51 @@
-import { Body, Controller, Delete, Param, Post, Put } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
+import { Request } from 'express';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CreateMenuDto, UpdateMenuDto } from './menu.dto';
 import { MenuService } from './menu.service';
-import { CreateMenuDto, UpdateMenuDto } from './mongo/menu/menu.dto';
 
-@Controller('menu')
+@UseGuards(JwtAuthGuard) // 전체에 인증 적용
+@Controller('menus')
 export class MenuController {
   constructor(private readonly menuService: MenuService) {}
 
   @Post()
-  async createMenu(@Body() dto: CreateMenuDto) {
-    return this.menuService.createMenu(dto);
+  async createMenu(@Req() req: Request, @Body() dto: CreateMenuDto) {
+    // req.user는 JwtStrategy의 validate에서 리턴한 값
+    const user = req.user as { id: number; email: string };
+    return this.menuService.createMenu(user, dto);
   }
 
-  @Put(':id')
-  async updateMenu(@Param('id') id: number, @Body() dto: UpdateMenuDto) {
-    return this.menuService.updateMenu(id, dto);
+  @Get()
+  async getMenus(@Req() req: Request) {
+    const user = req.user as { id: number; email: string };
+    return this.menuService.getMenus(user);
+  }
+
+  @Patch(':id')
+  async updateMenu(
+    @Req() req: Request,
+    @Param('id') id: string,
+    @Body() dto: UpdateMenuDto,
+  ) {
+    const user = req.user as { id: number; email: string };
+    return this.menuService.updateMenu(user, +id, dto);
   }
 
   @Delete(':id')
-  async deleteMenu(@Param('id') id: number) {
-    return this.menuService.deleteMenu(id);
+  async deleteMenu(@Req() req: Request, @Param('id') id: string) {
+    const user = req.user as { id: number; email: string };
+    await this.menuService.deleteMenu(user, +id);
+    return { message: '삭제 완료' };
   }
 }
-
-// @Controller('menu')
-// export class MenuController {
-//   constructor(private readonly menuService: MenuService) {}
-
-//   @Get()
-//   getAllMenu() {
-//     return this.menuService.getAllMenu();
-//   }
-
-//   @Get('/:id')
-//   getMenu(@Param('id') id: string) {
-//     return this.menuService.getMenu(id);
-//   }
-
-//   @Post()
-//   addMenu(@Body() menuDto: MenuDto) {
-//     return this.menuService.addMenu(menuDto);
-//   }
-
-//   @Delete('/:id')
-//   deleteMenu(@Param('id') id: string) {
-//     return this.menuService.deleteMenu(id);
-//   }
-
-//   @Patch('/:id')
-//   updateMenu(@Param('id') id: string, @Body() menuDto: MenuDto) {
-//     return this.menuService.updateMenu(id, menuDto);
-//   }
-// }

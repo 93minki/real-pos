@@ -1,6 +1,13 @@
-import { Type } from "class-transformer";
-import { IsArray, IsEnum, IsInt, IsNotEmpty, IsOptional, ValidateNested } from "class-validator";
-import { OrderStatus } from "./order.entity";
+import { Type } from 'class-transformer';
+import {
+  IsArray,
+  IsEnum,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  ValidateNested,
+} from 'class-validator';
+import { OrderStatus } from './order.entity';
 
 export class CreateOrderItemDto {
   @IsInt()
@@ -22,11 +29,17 @@ export class CreateOrderDto {
   userId: number;
 
   @IsArray()
-  @ValidateNested({each: true})
+  @ValidateNested({ each: true })
   @Type(() => CreateOrderItemDto)
   items: CreateOrderItemDto[];
 
   @IsOptional()
   @IsEnum(OrderStatus)
-  status?: OrderStatus
+  status?: OrderStatus;
+}
+
+export class UpdateOrderDto {
+  @IsOptional()
+  @IsEnum(OrderStatus)
+  status?: OrderStatus;
 }
