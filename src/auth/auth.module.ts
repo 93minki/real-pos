@@ -20,7 +20,7 @@ import { RefreshTokenStrategy } from './refresh-token.strategy';
       }),
     }),
     UserModule,
-  ], // 전역적으로 사용되는 옵션인데, at, rt 시크릿이 다르기 때문에 여기서는 비워둠
+  ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, RefreshTokenStrategy],
   exports: [AuthService],

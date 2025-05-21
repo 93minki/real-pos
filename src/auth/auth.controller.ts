@@ -24,7 +24,10 @@ export class AuthController {
   }
 
   @Post('login')
-  async login(@Body() dto: LoginDto, @Res({passthrough: true}) res: Response) {
+  async login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const { accessToken, refreshToken, user } =
       await this.authService.login(dto);
     const isProd = this.configService.get<string>('NODE_ENV') === 'production';
@@ -40,17 +43,21 @@ export class AuthController {
 
   @Post('refresh')
   @UseGuards(RefreshTokenGuard)
-  async refresh(@Req() req: Request, @Res() res: Response) {
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const user = req.user as any;
     const oldRefreshToken = req.cookies['refreshToken'];
     const { accessToken, refreshToken } = await this.authService.refresh(
       user,
       oldRefreshToken,
     );
+    const isProd = this.configService.get<string>('NODE_ENV') === 'production';
 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isProd,
       sameSite: 'lax',
       maxAge: 1000 * 60 * 60 * 24 * 7,
     });
@@ -59,7 +66,7 @@ export class AuthController {
 
   @Post('logout')
   @UseGuards(JwtAuthGuard)
-  async logout(@Req() req: Request, @Res() res: Response) {
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const user = req.user as any;
     await this.authService.logout(user.id);
     res.clearCookie('refreshToken');
