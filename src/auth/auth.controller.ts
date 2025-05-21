@@ -1,71 +1,68 @@
-import {
-  Body,
-  Controller,
-  Post,
-  Req,
-  Res,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Body, Controller, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
-import { SignInDto, SignUpDto } from './mongo/auth/auth.dto';
+import { LoginDto } from './dto/login.dto';
+import { SignupDto } from './dto/signup.dto';
+import { JwtAuthGuard } from './jwt-auth.guard';
+import { RefreshTokenGuard } from './refresh-token.guard';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
+
   @Post('signup')
-  async signUp(@Body() dto: SignUpDto) {
-    return await this.authService.register(dto);
+  async signup(@Body() dto: SignupDto) {
+    const user = await this.authService.signup(dto);
+    return {
+      message: '회원가입 성공',
+      user: { id: user.id, email: user.email },
+    };
   }
 
   @Post('login')
-  async signIn(
-    @Body() body: SignInDto,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    const { accessToken, refreshToken } = await this.authService.login(body);
+  async login(@Body() dto: LoginDto, @Res({passthrough: true}) res: Response) {
+    const { accessToken, refreshToken, user } =
+      await this.authService.login(dto);
+    const isProd = this.configService.get<string>('NODE_ENV') === 'production';
 
-    res.cookie('rt', refreshToken, {
+    res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      secure: isProd,
+      sameSite: 'lax',
+      maxAge: 1000 * 60 * 60 * 24 * 7,
     });
-    return { accessToken };
+    return res.json({ accessToken, user });
   }
 
   @Post('refresh')
-  async refreshToken(
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    const oldRefreshToken = req.cookies.refreshToken;
+  @UseGuards(RefreshTokenGuard)
+  async refresh(@Req() req: Request, @Res() res: Response) {
+    const user = req.user as any;
+    const oldRefreshToken = req.cookies['refreshToken'];
+    const { accessToken, refreshToken } = await this.authService.refresh(
+      user,
+      oldRefreshToken,
+    );
 
-    if (!oldRefreshToken) {
-      throw new UnauthorizedException('Refresh token missing');
-    }
-
-    const newAccessToken = await this.authService.refreshToken(oldRefreshToken);
-
-    // Refresh Token이 만료 1일 전이면 새로운 Refresh Token 발급
-    const newRefreshToken = req.cookies.refreshToken; // 갱신 필요 여부 확인 로직 추가 가능
-    res.cookie('refreshToken', newRefreshToken, {
+    res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: 'lax',
+      maxAge: 1000 * 60 * 60 * 24 * 7,
     });
-
-    return { accessToken: newAccessToken };
+    return res.json({ accessToken });
   }
 
   @Post('logout')
-  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const userId = req.body.userId; // 요청으로부터 유저 ID를 받음
-    await this.authService.logout(userId);
-
-    // 쿠키에서 Refresh Token 삭제
+  @UseGuards(JwtAuthGuard)
+  async logout(@Req() req: Request, @Res() res: Response) {
+    const user = req.user as any;
+    await this.authService.logout(user.id);
     res.clearCookie('refreshToken');
-    return { message: 'Logged out successfully' };
+    return { message: '로그아웃 성공' };
   }
 }

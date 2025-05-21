@@ -24,7 +24,10 @@ export class User {
   store_name: string;
 
   @Column({ type: 'varchar', length: 20, nullable: true })
-  phone: string;
+  phone?: string;
+
+  @Column({ nullable: true })
+  refreshToken?: string;
 
   @CreateDateColumn({ type: 'datetime' })
   created_at: Date;

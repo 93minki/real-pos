@@ -1,97 +1,106 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
-import { User } from 'src/user/user.entity';
 import { Repository } from 'typeorm';
-import { JwtUtil } from './jwt.util';
-import { SignInDto, SignUpDto } from './mongo/auth/auth.dto';
+import { User } from '../user/user.entity';
+import { LoginDto } from './dto/login.dto';
+import { SignupDto } from './dto/signup.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly jwtUtil: JwtUtil,
-    @InjectRepository(User) private readonly userRepository: Repository<User>,
+    @InjectRepository(User) private userRepository: Repository<User>,
+    private jwtService: JwtService,
+    private configService: ConfigService,
   ) {}
 
-  async register(user: SignUpDto): Promise<User> {
-    const { email, password, username } = user;
-    const hashedPassword = await bcrypt.hash(password, 10);
+  async signup(dto: SignupDto): Promise<User> {
+    const exists = await this.userRepository.findOneBy({ email: dto.email });
+    if (exists) throw new UnauthorizedException('이미 존재하는 이메일입니다.');
 
-    const newUser = this.userRepository.create({
-      email,
-      username,
+    const hashedPassword = await bcrypt.hash(dto.password, 10);
+
+    const user = this.userRepository.create({
+      email: dto.email,
       password: hashedPassword,
+      store_name: dto.store_name,
+      phone: dto.phone,
     });
-
-    return this.userRepository.save(newUser);
+    return this.userRepository.save(user);
   }
 
-  async login(
-    loginInfo: SignInDto,
-  ): Promise<{ accessToken: string; refreshToken: string }> {
-    const { email, password } = loginInfo;
-    const user = await this.userRepository.findOne({ where: { email } });
+  async login(dto: LoginDto) {
+    const user = await this.userRepository.findOneBy({ email: dto.email });
+    if (!user)
+      throw new UnauthorizedException('이메일/비밀번호가 일치하지 않습니다.');
+    const valid = await bcrypt.compare(dto.password, user.password);
+    if (!valid)
+      throw new UnauthorizedException('이메일/비밀번호가 일치하지 않습니다.');
 
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      throw new UnauthorizedException('Invalid email or password');
-    }
+    const tokens = await this.issueTokens(user.id, user.email);
 
-    const accessToken = this.jwtUtil.createAccessToken({
-      id: user.id,
-      email: user.email,
-      username: user.username,
-    });
-    const refreshToken = this.jwtUtil.createRefreshToken({
-      id: user.id,
-      email: user.email,
-      username: user.username,
-    });
+    const hashedRt = await bcrypt.hash(tokens.refreshToken, 10);
+    await this.userRepository.update(user.id, { refreshToken: hashedRt });
 
-    user.rt = refreshToken;
-    await this.userRepository.save(user);
+    return {
+      ...tokens,
+      user: { id: user.id, email: user.email, store_name: user.store_name },
+    };
+  }
 
+  async issueTokens(userId: number, email: string) {
+    const jwtSecret = this.configService.get<string>(
+      'JWT_SECRET',
+      'at-dev-secret',
+    );
+    const jwtRefreshSecret = this.configService.get<string>(
+      'JWT_REFRESH_SECRET',
+      'rt-dev-secret',
+    );
+    const jwtExpiresIn = this.configService.get<string>(
+      'JWT_EXPIRES_IN',
+      '15m',
+    );
+    const jwtRefreshExpiresIn = this.configService.get<string>(
+      'JWT_REFRESH_EXPIRES_IN',
+      '7d',
+    );
+
+    const [accessToken, refreshToken] = await Promise.all([
+      this.jwtService.signAsync(
+        { sub: userId, email },
+        { secret: jwtSecret, expiresIn: jwtExpiresIn },
+      ),
+      this.jwtService.signAsync(
+        { sub: userId, email },
+        { secret: jwtRefreshSecret, expiresIn: jwtRefreshExpiresIn },
+      ),
+    ]);
     return { accessToken, refreshToken };
   }
 
-  async refreshToken(oldToken: string): Promise<string> {
-    const payload = this.jwtUtil.verifyRefreshToken(oldToken);
+  async refresh(user: { id: number; email: string }, refreshToken: string) {
+    const dbUser = await this.userRepository.findOneBy({ id: user.id });
+    if (!dbUser?.refreshToken)
+      throw new ForbiddenException('No refresh token in DB');
 
-    const user = await this.userRepository.findOne({
-      where: { id: payload.id, rt: oldToken },
-    });
+    const rtMatch = await bcrypt.compare(refreshToken, dbUser.refreshToken);
+    if (!rtMatch) throw new ForbiddenException('Invalid refresh token');
 
-    if (!user) {
-      throw new UnauthorizedException('Invalid refresh token');
-    }
-
-    return this.jwtUtil.createAccessToken({
-      id: user.id,
-      email: user.email,
-      username: user.username,
-    });
+    const tokens = await this.issueTokens(dbUser.id, dbUser.email);
+    const hashedRt = await bcrypt.hash(tokens.refreshToken, 10);
+    await this.userRepository.update(dbUser.id, { refreshToken: hashedRt });
+    return tokens;
   }
 
-  async logout(userId: number): Promise<void> {
-    const user = await this.userRepository.findOne({ where: { id: userId } });
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
-
-    user.rt = null;
-    await this.userRepository.save(user);
-  }
-
-  async validateUser(email: string, password: string) {
-    const user = await this.userRepository.findOne({ where: { email } });
-
-    if (!user) {
-      return null;
-    }
-
-    const { password: hashedPassword, ...userInfo } = user;
-    if (bcrypt.compareSync(password, hashedPassword)) {
-      return userInfo;
-    }
-    return null;
+  async logout(userId: number) {
+    await this.userRepository.update(userId, { refreshToken: null });
+    return { message: 'Logged out' };
   }
 }
