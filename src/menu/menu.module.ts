@@ -1,15 +1,12 @@
 import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { MenuController } from './menu.controller';
+import { Menu } from './menu.entity';
 import { MenuService } from './menu.service';
-import { MenuMongoRepository } from './mongo/menu/menu.repository';
-import { Menu, MenuSchema } from './mongo/menu/menu.schema';
 
 @Module({
-  imports: [
-    MongooseModule.forFeature([{ name: Menu.name, schema: MenuSchema }]),
-  ],
-  providers: [MenuService, MenuMongoRepository],
+  imports: [TypeOrmModule.forFeature([Menu])],
+  providers: [MenuService],
   controllers: [MenuController],
 })
 export class MenuModule {}

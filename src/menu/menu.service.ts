@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { CreateMenuDto, UpdateMenuDto } from './mongo/menu/menu.dto';
-import { Menu } from './mongo/menu/menu.entity';
+
+import { CreateMenuDto, UpdateMenuDto } from './menu.dto';
+import { Menu } from './menu.entity';
 
 @Injectable()
 export class MenuService {
