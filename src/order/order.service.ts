@@ -1,6 +1,11 @@
-// order.service.ts
-import { Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Menu } from 'src/menu/menu.entity';
+import { OrderItem } from 'src/order-item/order-item.entity';
 import { Repository } from 'typeorm';
 import { CreateOrderDto, UpdateOrderDto } from './order.dto';
 import { Order } from './order.entity';
@@ -8,57 +13,95 @@ import { Order } from './order.entity';
 @Injectable()
 export class OrderService {
   constructor(
-    @InjectRepository(Order) private orderRepository: Repository<Order>,
+    @InjectRepository(Order)
+    private readonly orderRepository: Repository<Order>,
+    @InjectRepository(OrderItem)
+    private readonly orderItemRepository: Repository<OrderItem>,
+    @InjectRepository(Menu) private readonly menuRepository: Repository<Menu>,
   ) {}
 
-  // 주문 생성
   async createOrder(
-    dto: CreateOrderDto,
     user: { id: number; email: string },
+    dto: CreateOrderDto,
   ): Promise<Order> {
     const order = this.orderRepository.create({
-      ...dto,
       user,
+      status: dto.status || undefined,
     });
-    return this.orderRepository.save(order);
+    const saveOrder = await this.orderRepository.save(order);
+
+    const orderItems = dto.items.map((itemDto) =>
+      this.orderItemRepository.create({
+        order: saveOrder,
+        menu: { id: itemDto.menuId } as Menu,
+        quantity: itemDto.quantity,
+        price: itemDto.price,
+      }),
+    );
+    await this.orderItemRepository.save(orderItems);
+
+    return this.orderRepository.findOne({
+      where: { id: saveOrder.id },
+      relations: ['items', 'items.menu'],
+    });
   }
 
-  // 주문 전체 조회 (내 주문만)
   async getOrders(user: { id: number; email: string }): Promise<Order[]> {
     return this.orderRepository.find({
       where: { user: { id: user.id } },
-      relations: ['user', 'orderItems', 'orderItems.menu'],
+      relations: ['items', 'items.menu'],
+      order: { created_at: 'DESC' },
     });
   }
 
-  // 주문 단일 조회 (본인 것만)
   async getOrderById(
-    id: number,
+    orderId: number,
     user: { id: number; email: string },
-  ): Promise<Order | null> {
-    return this.orderRepository.findOne({
-      where: { id, user: { id: user.id } },
-      relations: ['user', 'orderItems', 'orderItems.menu'],
+  ): Promise<Order> {
+    const order = await this.orderRepository.findOne({
+      where: { id: orderId },
+      relations: ['items', 'items.menu'],
     });
+    if (!order) throw new NotFoundException('주문을 찾을 수 없습니다.');
+    if (order.user.id !== user.id)
+      throw new ForbiddenException('본인의 주문만 볼 수 있습니다.');
+
+    return order;
   }
 
-  // 주문 수정 (ex. 상태변경 등)
   async updateOrder(
-    id: number,
+    orderId: number,
     dto: UpdateOrderDto,
     user: { id: number; email: string },
-  ): Promise<Order | null> {
-    const order = await this.getOrderById(id, user);
-    if (!order) return null;
+  ): Promise<Order> {
+    const order = await this.orderRepository.findOne({
+      where: { id: orderId },
+      relations: ['user'],
+    });
+    if (!order) throw new NotFoundException('주문을 찾을 수 없습니다.');
+    if (order.user.id !== user.id)
+      throw new ForbiddenException('본인의 주문만 수정할 수 있습니다.');
+
     Object.assign(order, dto);
-    return this.orderRepository.save(order);
+    await this.orderRepository.save(order);
+    return this.orderRepository.findOne({
+      where: { id: orderId },
+      relations: ['items', 'items.menu'],
+    });
   }
 
-  // 주문 삭제 (본인 것만)
   async deleteOrder(
-    id: number,
+    orderId: number,
     user: { id: number; email: string },
   ): Promise<void> {
-    await this.orderRepository.delete({ id, user: { id: user.id } });
+    const order = await this.orderRepository.findOne({
+      where: { id: orderId },
+      relations: ['user'],
+    });
+    if (!order) throw new NotFoundException('주문을 찾을 수 없습니다.');
+    if (order.user.id !== user.id)
+      throw new ForbiddenException('본인의 주문만 삭제할 수 있습니다.');
+
+    await this.orderRepository.delete(orderId);
   }
 }

@@ -24,7 +24,7 @@ export class OrderController {
   @Post()
   async createOrder(@Body() dto: CreateOrderDto, @Req() req: Request) {
     const user = req.user as { id: number; email: string };
-    return this.orderService.createOrder(dto, user);
+    return this.orderService.createOrder(user, dto);
   }
 
   // 내 주문 전체 조회

@@ -7,21 +7,8 @@ import {
   IsOptional,
   ValidateNested,
 } from 'class-validator';
+import { CreateOrderItemDto } from '../order-item/order-item.dto'; // 경로 맞게 수정
 import { OrderStatus } from './order.entity';
-
-export class CreateOrderItemDto {
-  @IsInt()
-  @IsNotEmpty()
-  menuId: number;
-
-  @IsInt()
-  @IsNotEmpty()
-  quantity: number;
-
-  @IsInt()
-  @IsNotEmpty()
-  price: number;
-}
 
 export class CreateOrderDto {
   @IsInt()
