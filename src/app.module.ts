@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { Menu } from './menu/menu.entity';
 import { MenuModule } from './menu/menu.module';
+import { OrderItem } from './order-item/order-item.entity';
 import { OrderItemModule } from './order-item/order-item.module';
 import { Order } from './order/order.entity';
 import { OrderModule } from './order/order.module';
@@ -24,7 +25,7 @@ import { UserModule } from './user/user.module';
         username: configService.get<string>('DB_USERNAME', 'root'),
         password: configService.get<string>('DB_PASSWORD', ''),
         database: configService.get<string>('DB_NAME', 'real_pos'),
-        entities: [User, Menu, Order],
+        entities: [User, Menu, Order, OrderItem],
         synchronize: true,
         logging: true,
         charset: 'utf8mb4_unicode_ci',
