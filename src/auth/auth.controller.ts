@@ -38,7 +38,13 @@ export class AuthController {
       sameSite: 'lax',
       maxAge: 1000 * 60 * 60 * 24 * 7,
     });
-    return res.json({ accessToken, user });
+    res.json({
+      accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+      },
+    });
   }
 
   @Post('refresh')
@@ -61,13 +67,14 @@ export class AuthController {
       sameSite: 'lax',
       maxAge: 1000 * 60 * 60 * 24 * 7,
     });
-    return res.json({ accessToken });
+    res.json({ accessToken });
   }
 
   @Post('logout')
   @UseGuards(JwtAuthGuard)
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const user = req.user as any;
+    console.log('user', user);
     await this.authService.logout(user.id);
     res.clearCookie('refreshToken');
     return { message: '로그아웃 성공' };

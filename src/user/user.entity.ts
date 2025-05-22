@@ -1,3 +1,4 @@
+import { Exclude, Expose } from 'class-transformer';
 import { Menu } from 'src/menu/menu.entity';
 import { Order } from 'src/order/order.entity';
 import {
@@ -11,21 +12,27 @@ import {
 
 @Entity()
 export class User {
+  @Expose()
   @PrimaryGeneratedColumn('increment', { type: 'bigint' })
   id: number;
 
+  @Expose()
   @Column({ type: 'varchar', length: 100, unique: true })
   email: string;
 
+  @Exclude()
   @Column({ type: 'varchar', length: 255 })
   password: string;
 
+  @Expose()
   @Column({ type: 'varchar', length: 100 })
   store_name: string;
 
+  @Exclude()
   @Column({ type: 'varchar', length: 20, nullable: true })
   phone?: string;
 
+  @Exclude()
   @Column({ nullable: true })
   refreshToken?: string;
 

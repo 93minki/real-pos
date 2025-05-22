@@ -5,8 +5,8 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
-  Put,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -42,7 +42,7 @@ export class OrderController {
   }
 
   // 주문 수정
-  @Put(':id')
+  @Patch(':id')
   async updateOrder(
     @Param('id') id: number,
     @Body() dto: UpdateOrderDto,

@@ -8,18 +8,10 @@ export class CreateOrderItemDto {
   @IsInt()
   @IsNotEmpty()
   quantity: number;
-
-  @IsInt()
-  @IsNotEmpty()
-  price: number;
 }
 
 export class UpdateOrderItemDto {
   @IsOptional()
   @IsInt()
-  quantity?: number;
-
-  @IsOptional()
-  @IsInt()
-  price?: number;
+  quantity: number;
 }

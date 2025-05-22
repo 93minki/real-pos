@@ -19,9 +19,6 @@ export class CreateMenuDto {
 
   @IsOptional()
   is_active?: boolean;
-
-  @IsNotEmpty()
-  userId: number;
 }
 
 export class UpdateMenuDto {

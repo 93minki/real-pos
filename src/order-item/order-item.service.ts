@@ -27,7 +27,7 @@ export class OrderItemService {
       order,
       menu,
       quantity: dto.quantity,
-      price: dto.price,
+      price: menu.price,
     });
 
     return this.orderItemRepository.save(orderItem);
@@ -36,7 +36,7 @@ export class OrderItemService {
   async update(id: number, dto: UpdateOrderItemDto): Promise<OrderItem> {
     const orderItem = await this.orderItemRepository.findOneBy({ id });
     if (!orderItem) throw new NotFoundException('OrderItem Not Found');
-    Object.assign(orderItem, dto);
+    orderItem.quantity = dto.quantity;
     return this.orderItemRepository.save(orderItem);
   }
 

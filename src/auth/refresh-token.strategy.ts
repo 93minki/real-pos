@@ -18,7 +18,7 @@ export class RefreshTokenStrategy extends PassportStrategy(
       ignoreExpiration: false,
       secretOrKey: configService.get<string>(
         'JWT_REFRESH_SECRET',
-        'refresh-dev-secret',
+        'rt-dev-secret',
       ),
     });
   }

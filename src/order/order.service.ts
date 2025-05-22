@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { plainToInstance } from 'class-transformer';
 import { Menu } from 'src/menu/menu.entity';
 import { OrderItem } from 'src/order-item/order-item.entity';
 import { Repository } from 'typeorm';
@@ -35,7 +36,6 @@ export class OrderService {
         order: saveOrder,
         menu: { id: itemDto.menuId } as Menu,
         quantity: itemDto.quantity,
-        price: itemDto.price,
       }),
     );
     await this.orderItemRepository.save(orderItems);
@@ -60,13 +60,13 @@ export class OrderService {
   ): Promise<Order> {
     const order = await this.orderRepository.findOne({
       where: { id: orderId },
-      relations: ['items', 'items.menu'],
+      relations: ['user', 'items', 'items.menu'],
     });
     if (!order) throw new NotFoundException('주문을 찾을 수 없습니다.');
     if (order.user.id !== user.id)
       throw new ForbiddenException('본인의 주문만 볼 수 있습니다.');
 
-    return order;
+    return plainToInstance(Order, order);
   }
 
   async updateOrder(

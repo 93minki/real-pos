@@ -57,7 +57,7 @@ export class AuthService {
   async issueTokens(userId: number, email: string) {
     const jwtSecret = this.configService.get<string>(
       'JWT_SECRET',
-      'at-dev-secret',
+      'dev-secret',
     );
     const jwtRefreshSecret = this.configService.get<string>(
       'JWT_REFRESH_SECRET',

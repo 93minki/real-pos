@@ -1,0 +1,32 @@
+@server = http://127.0.0.1:8080
+
+### Signup
+POST {{server}}/auth/signup
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "test1234",
+  "store_name": "test_store",
+  "phone": "123321321"
+}
+
+### Signin
+POST {{server}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "password": "test1234"
+}
+
+
+### Refresh Token
+@refreshToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZW1haWwiOiJ0ZXN0QGV4YW1wbGUuY29tIiwiaWF0IjoxNzQ3ODk0NTEzLCJleHAiOjE3NDg0OTkzMTN9.2GoAtc1qHfYoLV-UYZdqooEw8OMU1XA52JryCkvd9eY; Max-Age=604800
+POST {{server}}/auth/refresh
+Cookie: refreshToken={{refreshToken}}
+
+@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZW1haWwiOiJ0ZXN0QGV4YW1wbGUuY29tIiwiaWF0IjoxNzQ3ODkxMDQ0LCJleHAiOjE3NDc4OTE5NDR9.GzKcAIBVHI5erkd3OzHxPPVZvRvJPpsw2UGeezYb8lM
+### Logout
+POST {{server}}/auth/logout
+Authorization: Bearer {{accessToken}}
