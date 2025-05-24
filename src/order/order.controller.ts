@@ -1,3 +1,4 @@
+// order.controller.ts
 import {
   Body,
   Controller,
@@ -6,46 +7,55 @@ import {
   Param,
   Patch,
   Post,
-  Query,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
-import { OrderDto } from './mongo/order/order.dto';
+import { Request } from 'express';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CreateOrderDto, UpdateOrderDto } from './order.dto';
 import { OrderService } from './order.service';
 
-@Controller('order')
+@UseGuards(JwtAuthGuard)
+@Controller('orders')
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
-  @Get()
-  getAllOrder() {
-    return this.orderService.getAllOrders();
-  }
-
-  @Get('/filter/date')
-  getOrderByDate(@Query('date') date: string) {
-    return this.orderService.getOrderByDate(date);
-  }
-
-  @Get('filter/date-time')
-  getOrder(@Query('date') date: string, @Query('time') time: string) {
-    return this.orderService.getOrder(date, time);
-  }
-
+  // 주문 생성
   @Post()
-  addOrder(@Body() orderDto: OrderDto) {
-    return this.orderService.addOrder(orderDto);
+  async createOrder(@Body() dto: CreateOrderDto, @Req() req: Request) {
+    const user = req.user as { id: number; email: string };
+    return this.orderService.createOrder(user, dto);
   }
 
-  @Delete('/:id')
-  deleteOrder(@Param('id') id: string) {
-    return this.orderService.deleteOrder(id);
+  // 내 주문 전체 조회
+  @Get()
+  async getOrders(@Req() req: Request) {
+    const user = req.user as { id: number; email: string };
+    return this.orderService.getOrders(user);
   }
 
-  @Patch()
-  updateOrder(
-    @Query('date') date: string,
-    @Query('time') time: string,
-    @Body() items: OrderDto['items'],
+  // 내 주문 단건 조회
+  @Get(':id')
+  async getOrderById(@Param('id') id: number, @Req() req: Request) {
+    const user = req.user as { id: number; email: string };
+    return this.orderService.getOrderById(id, user);
+  }
+
+  // 주문 수정
+  @Patch(':id')
+  async updateOrder(
+    @Param('id') id: number,
+    @Body() dto: UpdateOrderDto,
+    @Req() req: Request,
   ) {
-    return this.orderService.updateOrder(date, time, items);
+    const user = req.user as { id: number; email: string };
+    return this.orderService.updateOrder(id, dto, user);
+  }
+
+  // 주문 삭제
+  @Delete(':id')
+  async deleteOrder(@Param('id') id: number, @Req() req: Request) {
+    const user = req.user as { id: number; email: string };
+    return this.orderService.deleteOrder(id, user);
   }
 }

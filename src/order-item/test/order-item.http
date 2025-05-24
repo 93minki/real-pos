@@ -1,0 +1,30 @@
+@server = http://127.0.0.1:8080
+@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZW1haWwiOiJ0ZXN0QGV4YW1wbGUuY29tIiwiaWF0IjoxNzQ3OTA0NzE1LCJleHAiOjE3NDc5MDU2MTV9._LKpZRH2x51Yg1Nt3_EPutaBaWIHhfuhK9fVudOW1W4
+
+### 주문 아이템 조회
+GET {{server}}/order-item/order/3
+Authorization: Bearer {{accessToken}}
+
+### 주문 아이템 추가
+POST {{server}}/order-item/order/3
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "orderId": 3,
+  "menuId": 2,
+  "quantity": 4
+}
+
+### 주문 아이템 수정
+PATCH {{server}}/order-item/7
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "quantity": 5 
+}
+
+### 주문 아이템 삭제
+DELETE {{server}}/order-item/6
+Authorization: Bearer {{accessToken}}

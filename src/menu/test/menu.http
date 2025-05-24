@@ -1,30 +1,34 @@
-@server = http://localhost:8080
-@testId = 66c166baa91ce12dd9da5c94
+@server = http://127.0.0.1:8080
+@accessToken = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZW1haWwiOiJ0ZXN0QGV4YW1wbGUuY29tIiwiaWF0IjoxNzQ3ODk4NzMxLCJleHAiOjE3NDc4OTk2MzF9.DtIA1ObaCmK6oRElfU-FchkPPPAFMzGrzTMGqo0PVsY
+
+### 메뉴 전체 조회
+GET {{server}}/menus
+Authorization: Bearer {{accessToken}} 
 
 
-# 메뉴 조회
-GET {{server}}/menu
 
-### id로 메뉴 조회
-GET {{server}}/menu/{{testId}}
+### 메뉴 생성
+POST {{server}}/menus
+Authorization: Bearer {{accessToken}} 
+Content-Type: application/json
 
-### 메뉴 추가
-POST {{server}}/menu
+{
+  "name": "아이스아메리카노2",
+  "price": 5000,
+  "active": true
+}
+
+### 메뉴 수정
+PATCH {{server}}/menus/1
+Authorization: Bearer {{accessToken}} 
 Content-Type: application/json
 
 {
   "name": "아이스아메리카노",
   "price": 4000,
-  "enable": true
+  "active": true
 }
 
-### 메뉴 수정
-PATCH {{server}}/menu/{{testId}}
-Content-Type: application/json
-
-{
-  "price": 3000
-}
-
-### 메뉴 삭제
-DELETE {{server}}/menu/66c168b0ef377fa85acabe0a
+### 메뉴 삭제 
+DELETE {{server}}/menus/1
+Authorization: Bearer {{accessToken}} 
