@@ -38,7 +38,7 @@ export class OrderController {
   @Get(':id')
   async getOrderById(@Param('id') id: number, @Req() req: Request) {
     const user = req.user as { id: number; email: string };
-    return this.orderService.getOrderById(Number(id), user);
+    return this.orderService.getOrderById(id, user);
   }
 
   // 주문 수정
@@ -49,13 +49,13 @@ export class OrderController {
     @Req() req: Request,
   ) {
     const user = req.user as { id: number; email: string };
-    return this.orderService.updateOrder(Number(id), dto, user);
+    return this.orderService.updateOrder(id, dto, user);
   }
 
   // 주문 삭제
   @Delete(':id')
   async deleteOrder(@Param('id') id: number, @Req() req: Request) {
     const user = req.user as { id: number; email: string };
-    return this.orderService.deleteOrder(Number(id), user);
+    return this.orderService.deleteOrder(id, user);
   }
 }

@@ -18,7 +18,6 @@ export class OrderService {
     private readonly orderRepository: Repository<Order>,
     @InjectRepository(OrderItem)
     private readonly orderItemRepository: Repository<OrderItem>,
-    @InjectRepository(Menu) private readonly menuRepository: Repository<Menu>,
   ) {}
 
   async createOrder(
