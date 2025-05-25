@@ -9,7 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { User } from '../user/user.entity';
-import { LoginDto } from './dto/login.dto';
+import { SigninDto } from './dto/login.dto';
 import { SignupDto } from './dto/signup.dto';
 
 @Injectable()
@@ -35,7 +35,7 @@ export class AuthService {
     return this.userRepository.save(user);
   }
 
-  async login(dto: LoginDto) {
+  async signin(dto: SigninDto) {
     const user = await this.userRepository.findOneBy({ email: dto.email });
     if (!user)
       throw new UnauthorizedException('이메일/비밀번호가 일치하지 않습니다.');
