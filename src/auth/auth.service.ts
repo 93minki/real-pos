@@ -135,4 +135,22 @@ export class AuthService {
       },
     };
   }
+
+  checkAccessToken(accessToken: string) {
+    if (!accessToken) {
+      return { code: 'FAIL', message: '토큰 없음' };
+    }
+    try {
+      const payload = this.jwtService.verify(accessToken, {
+        secret: this.configService.get('JWT_ACCESS_SECRET', 'dev-secret'),
+      });
+      return { code: 'OK', user: payload };
+    } catch (e) {
+      if (e.name === 'TokenExpiredError') {
+        return { code: 'FAIL', message: '토큰 만료' };
+      } else {
+        return { code: 'FAIL', message: '토큰 위조' };
+      }
+    }
+  }
 }

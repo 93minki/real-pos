@@ -1,4 +1,12 @@
-import { Body, Controller, Post, Req, Res, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
@@ -34,6 +42,12 @@ export class AuthController {
       const isProd =
         this.configService.get<string>('NODE_ENV') === 'production';
 
+      res.cookie('accessToken', accessToken, {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: 'lax',
+        maxAge: 1000 * 60 * 15,
+      });
       res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
         secure: isProd,
@@ -43,11 +57,6 @@ export class AuthController {
       res.json({
         code: 'OK',
         message: '로그인 성공',
-        accessToken,
-        user: {
-          id: user.id,
-          email: user.email,
-        },
       });
     } catch (error) {
       res.json({
@@ -55,6 +64,12 @@ export class AuthController {
         message: `로그인 실패: ${error.message}`,
       });
     }
+  }
+
+  @Get('check')
+  async check(@Req() req: Request) {
+    const accessToken = req.cookies['accessToken'];
+    return this.authService.checkAccessToken(accessToken);
   }
 
   @Post('refresh')
@@ -98,6 +113,7 @@ export class AuthController {
     try {
       const user = req.user as any;
       await this.authService.logout(user.id);
+      res.clearCookie('accessToken');
       res.clearCookie('refreshToken');
       res.json({ code: 'OK', message: '로그아웃 성공' });
     } catch (error) {
