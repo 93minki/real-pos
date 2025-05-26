@@ -5,7 +5,6 @@ import { AuthService } from './auth.service';
 import { SigninDto } from './dto/login.dto';
 import { SignupDto } from './dto/signup.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
-import { RefreshTokenGuard } from './refresh-token.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -47,7 +46,7 @@ export class AuthController {
         accessToken,
         user: {
           id: user.id,
-          eamil: user.email,
+          email: user.email,
         },
       });
     } catch (error) {
@@ -59,33 +58,37 @@ export class AuthController {
   }
 
   @Post('refresh')
-  @UseGuards(RefreshTokenGuard)
   async refresh(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
     try {
-      const user = req.user as any;
-      const oldRefreshToken = req.cookies['refreshToken'];
-      const { accessToken, refreshToken } = await this.authService.refresh(
-        user,
-        oldRefreshToken,
-      );
-      const isProd =
-        this.configService.get<string>('NODE_ENV') === 'production';
-
-      res.cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: isProd,
-        sameSite: 'lax',
-        maxAge: 1000 * 60 * 60 * 24 * 7,
-      });
-      res.json({ code: 'OK', message: '토큰 갱신 성공', accessToken });
+      const refreshToken = req.cookies['refreshToken'];
+      const result = await this.authService.refreshWithToken(refreshToken);
+      if (result.code === 'OK') {
+        const isProd =
+          this.configService.get<string>('NODE_ENV') === 'production';
+        if (result.refreshToken) {
+          res.cookie('refreshToken', result.refreshToken, {
+            httpOnly: true,
+            secure: isProd,
+            sameSite: 'lax',
+            maxAge: 1000 * 60 * 60 * 24 * 7,
+          });
+        }
+        res.json({
+          code: 'OK',
+          message: '토큰 갱신 성공',
+          accessToken: result.accessToken,
+          user: result.user,
+        });
+      } else {
+        res.clearCookie('refreshToken');
+        res.status(401).json({ code: 'FAIL', message: '재로그인 필요' });
+      }
     } catch (error) {
-      res.json({
-        code: 'FAIL',
-        message: `토큰 갱신 실패: ${error.message}`,
-      });
+      res.clearCookie('refreshToken');
+      res.status(401).json({ code: 'FAIL', message: '재로그인 필요' });
     }
   }
 

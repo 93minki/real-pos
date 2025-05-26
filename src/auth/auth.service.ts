@@ -1,8 +1,4 @@
-import {
-  ForbiddenException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -11,6 +7,7 @@ import { Repository } from 'typeorm';
 import { User } from '../user/user.entity';
 import { SigninDto } from './dto/login.dto';
 import { SignupDto } from './dto/signup.dto';
+import { verifyTokenStatus } from './jwt.util';
 
 @Injectable()
 export class AuthService {
@@ -85,22 +82,57 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  async refresh(user: { id: number; email: string }, refreshToken: string) {
-    const dbUser = await this.userRepository.findOneBy({ id: user.id });
-    if (!dbUser?.refreshToken)
-      throw new ForbiddenException('No refresh token in DB');
-
-    const rtMatch = await bcrypt.compare(refreshToken, dbUser.refreshToken);
-    if (!rtMatch) throw new ForbiddenException('Invalid refresh token');
-
-    const tokens = await this.issueTokens(dbUser.id, dbUser.email);
-    const hashedRt = await bcrypt.hash(tokens.refreshToken, 10);
-    await this.userRepository.update(dbUser.id, { refreshToken: hashedRt });
-    return tokens;
-  }
-
   async logout(userId: number) {
     await this.userRepository.update(userId, { refreshToken: null });
     return { message: 'Logged out' };
+  }
+
+  /**
+   * refreshToken만 받아서 RT 검증 및 AT/RT 재발급, 위조/만료 구분, 일관된 응답 반환
+   */
+  async refreshWithToken(refreshToken: string) {
+    const refreshSecret = this.configService.get<string>(
+      'JWT_REFRESH_SECRET',
+      'rt-dev-secret',
+    );
+    const rtResult = verifyTokenStatus(refreshToken, refreshSecret);
+    if (rtResult.status !== 'VALID') {
+      // RT 만료 또는 위조
+      return { code: 'FAIL', message: '재로그인 필요' };
+    }
+    const { sub: userId, email } = rtResult.decoded;
+    const dbUser = await this.userRepository.findOneBy({ id: userId });
+    if (!dbUser) {
+      return { code: 'FAIL', message: '재로그인 필요' };
+    }
+    // RT 위조(서명은 맞지만 DB에 저장된 RT와 다름)
+    const rtMatch = await bcrypt.compare(refreshToken, dbUser.refreshToken);
+    if (!rtMatch) {
+      return { code: 'FAIL', message: '재로그인 필요' };
+    }
+    // RT 만료 임박(3일 이하)이면 RT도 재발급, 아니면 기존 RT 유지
+    const remainDay = (rtResult.remain ?? 0) / (60 * 60 * 24);
+    let newAccessToken: string;
+    let newRefreshToken: string = refreshToken;
+    if (remainDay < 3) {
+      const tokens = await this.issueTokens(userId, email);
+      newAccessToken = tokens.accessToken;
+      newRefreshToken = tokens.refreshToken;
+      const hashedRt = await bcrypt.hash(newRefreshToken, 10);
+      await this.userRepository.update(userId, { refreshToken: hashedRt });
+    } else {
+      const tokens = await this.issueTokens(userId, email);
+      newAccessToken = tokens.accessToken;
+    }
+    return {
+      code: 'OK',
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+      user: {
+        id: dbUser.id,
+        email: dbUser.email,
+        store_name: dbUser.store_name,
+      },
+    };
   }
 }
