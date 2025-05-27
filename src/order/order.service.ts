@@ -7,7 +7,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
 import { Menu } from 'src/menu/menu.entity';
 import { OrderItem } from 'src/order-item/order-item.entity';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import { CreateOrderDto, UpdateOrderDto } from './order.dto';
 import { Order } from './order.entity';
 
@@ -42,7 +42,7 @@ export class OrderService {
           order: saveOrder,
           menu,
           quantity: itemDto.quantity,
-          price: menu.price,
+          price: menu.price * itemDto.quantity,
         });
       }),
     );
@@ -57,6 +57,21 @@ export class OrderService {
   async getOrders(user: { id: number; email: string }): Promise<Order[]> {
     return this.orderRepository.find({
       where: { user: { id: user.id } },
+      relations: ['items', 'items.menu'],
+      order: { created_at: 'DESC' },
+    });
+  }
+
+  async getTodayOrders(user: { id: number; email: string }): Promise<Order[]> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return this.orderRepository.find({
+      where: {
+        user: { id: user.id },
+        created_at: Between(today, tomorrow),
+      },
       relations: ['items', 'items.menu'],
       order: { created_at: 'DESC' },
     });

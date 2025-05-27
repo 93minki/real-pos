@@ -34,6 +34,12 @@ export class OrderController {
     return this.orderService.getOrders(user);
   }
 
+  @Get('today')
+  async getTodayOrders(@Req() req: Request) {
+    const user = req.user as { id: number; email: string };
+    return this.orderService.getTodayOrders(user);
+  }
+
   // 내 주문 단건 조회
   @Get(':id')
   async getOrderById(@Param('id') id: number, @Req() req: Request) {
