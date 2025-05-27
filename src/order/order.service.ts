@@ -18,6 +18,8 @@ export class OrderService {
     private readonly orderRepository: Repository<Order>,
     @InjectRepository(OrderItem)
     private readonly orderItemRepository: Repository<OrderItem>,
+    @InjectRepository(Menu)
+    private readonly menuRepository: Repository<Menu>,
   ) {}
 
   async createOrder(
@@ -30,11 +32,18 @@ export class OrderService {
     });
     const saveOrder = await this.orderRepository.save(order);
 
-    const orderItems = dto.items.map((itemDto) =>
-      this.orderItemRepository.create({
-        order: saveOrder,
-        menu: { id: itemDto.menuId } as Menu,
-        quantity: itemDto.quantity,
+    const orderItems = await Promise.all(
+      dto.items.map(async (itemDto) => {
+        const menu = await this.menuRepository.findOneBy({
+          id: itemDto.menuId,
+        });
+        if (!menu) throw new NotFoundException('메뉴를 찾을 수 없습니다.');
+        return this.orderItemRepository.create({
+          order: saveOrder,
+          menu,
+          quantity: itemDto.quantity,
+          price: menu.price,
+        });
       }),
     );
     await this.orderItemRepository.save(orderItems);

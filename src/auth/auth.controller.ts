@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Post,
-  Req,
-  Res,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
@@ -66,18 +58,13 @@ export class AuthController {
     }
   }
 
-  @Get('check')
-  async check(@Req() req: Request) {
-    const accessToken = req.cookies['accessToken'];
-    return this.authService.checkAccessToken(accessToken);
-  }
-
   @Post('refresh')
   async refresh(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
     try {
+      console.log('refresh');
       const refreshToken = req.cookies['refreshToken'];
       const result = await this.authService.refreshWithToken(refreshToken);
       if (result.code === 'OK') {
@@ -91,17 +78,26 @@ export class AuthController {
             maxAge: 1000 * 60 * 60 * 24 * 7,
           });
         }
+        if (result.accessToken) {
+          res.cookie('accessToken', result.accessToken, {
+            httpOnly: true,
+            secure: isProd,
+            sameSite: 'lax',
+            maxAge: 1000 * 60 * 15,
+          });
+        }
         res.json({
           code: 'OK',
           message: '토큰 갱신 성공',
-          accessToken: result.accessToken,
           user: result.user,
         });
       } else {
+        res.clearCookie('accessToken');
         res.clearCookie('refreshToken');
         res.status(401).json({ code: 'FAIL', message: '재로그인 필요' });
       }
     } catch (error) {
+      res.clearCookie('accessToken');
       res.clearCookie('refreshToken');
       res.status(401).json({ code: 'FAIL', message: '재로그인 필요' });
     }
