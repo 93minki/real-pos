@@ -47,7 +47,14 @@ export class OrderController {
     return this.orderService.getOrderById(id, user);
   }
 
-  // 주문 수정
+  // 주문 완료 (상태만 IN_PROGRESS -> COMPLETED로 변경)
+  @Patch(':id/complete')
+  async completeOrder(@Param('id') id: number, @Req() req: Request) {
+    const user = req.user as { id: number; email: string };
+    return this.orderService.completeOrder(id, user);
+  }
+
+  // 주문 수정 (메뉴 수량 증감/삭제 등)
   @Patch(':id')
   async updateOrder(
     @Param('id') id: number,
@@ -62,6 +69,7 @@ export class OrderController {
   @Delete(':id')
   async deleteOrder(@Param('id') id: number, @Req() req: Request) {
     const user = req.user as { id: number; email: string };
-    return this.orderService.deleteOrder(id, user);
+    await this.orderService.deleteOrder(id, user);
+    return { code: 'OK', message: '주문이 삭제되었습니다.' };
   }
 }

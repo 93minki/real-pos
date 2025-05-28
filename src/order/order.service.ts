@@ -9,7 +9,7 @@ import { Menu } from 'src/menu/menu.entity';
 import { OrderItem } from 'src/order-item/order-item.entity';
 import { Between, Repository } from 'typeorm';
 import { CreateOrderDto, UpdateOrderDto } from './order.dto';
-import { Order } from './order.entity';
+import { Order, OrderStatus } from './order.entity';
 
 @Injectable()
 export class OrderService {
@@ -92,6 +92,29 @@ export class OrderService {
     return plainToInstance(Order, order);
   }
 
+  async completeOrder(
+    orderId: number,
+    user: { id: number; email: string },
+  ): Promise<Order> {
+    const order = await this.orderRepository.findOne({
+      where: { id: orderId },
+      relations: ['user'],
+    });
+    if (!order) throw new NotFoundException('주문을 찾을 수 없습니다.');
+    if (order.user.id !== user.id)
+      throw new ForbiddenException('본인의 주문만 완료할 수 있습니다.');
+    if (order.status === 'COMPLETED')
+      throw new ForbiddenException('이미 완료된 주문입니다.');
+
+    order.status = OrderStatus.COMPLETED;
+
+    await this.orderRepository.save(order);
+    return this.orderRepository.findOne({
+      where: { id: orderId },
+      relations: ['items', 'items.menu'],
+    });
+  }
+
   async updateOrder(
     orderId: number,
     dto: UpdateOrderDto,
@@ -104,7 +127,8 @@ export class OrderService {
     if (!order) throw new NotFoundException('주문을 찾을 수 없습니다.');
     if (order.user.id !== user.id)
       throw new ForbiddenException('본인의 주문만 수정할 수 있습니다.');
-
+    if (order.status === 'COMPLETED')
+      throw new ForbiddenException('완료된 주문은 수정할 수 없습니다.');
     Object.assign(order, dto);
     await this.orderRepository.save(order);
     return this.orderRepository.findOne({
@@ -124,7 +148,8 @@ export class OrderService {
     if (!order) throw new NotFoundException('주문을 찾을 수 없습니다.');
     if (order.user.id !== user.id)
       throw new ForbiddenException('본인의 주문만 삭제할 수 있습니다.');
-
+    if (order.status === 'COMPLETED')
+      throw new ForbiddenException('완료된 주문은 삭제할 수 없습니다.');
     await this.orderRepository.delete(orderId);
   }
 }
