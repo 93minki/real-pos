@@ -129,8 +129,28 @@ export class OrderService {
       throw new ForbiddenException('본인의 주문만 수정할 수 있습니다.');
     if (order.status === 'COMPLETED')
       throw new ForbiddenException('완료된 주문은 수정할 수 없습니다.');
-    Object.assign(order, dto);
-    await this.orderRepository.save(order);
+
+    console.log('dto??????', dto);
+
+    await this.orderItemRepository.delete({ order: { id: orderId } });
+
+    const newItems = await Promise.all(
+      dto.items.map(async (itemDto) => {
+        const menu = await this.menuRepository.findOneBy({
+          id: itemDto.menuId,
+        });
+        if (!menu) throw new NotFoundException('메뉴를 찾을 수 없습니다.');
+        return this.orderItemRepository.create({
+          order,
+          menu,
+          quantity: itemDto.quantity,
+          price: menu.price * itemDto.quantity,
+        });
+      }),
+    );
+    await this.orderItemRepository.save(newItems);
+
+    // 4. 최신 상태 반환
     return this.orderRepository.findOne({
       where: { id: orderId },
       relations: ['items', 'items.menu'],
@@ -148,8 +168,7 @@ export class OrderService {
     if (!order) throw new NotFoundException('주문을 찾을 수 없습니다.');
     if (order.user.id !== user.id)
       throw new ForbiddenException('본인의 주문만 삭제할 수 있습니다.');
-    if (order.status === 'COMPLETED')
-      throw new ForbiddenException('완료된 주문은 삭제할 수 없습니다.');
+
     await this.orderRepository.delete(orderId);
   }
 }
