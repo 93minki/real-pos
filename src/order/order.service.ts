@@ -77,6 +77,23 @@ export class OrderService {
     });
   }
 
+  async getMonthlyOrders(
+    user: { id: number; email: string },
+    year: number,
+    month: number,
+  ): Promise<Order[]> {
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0);
+    return this.orderRepository.find({
+      where: {
+        user: { id: user.id },
+        created_at: Between(startDate, endDate),
+      },
+      relations: ['items', 'items.menu'],
+      order: { created_at: 'DESC' },
+    });
+  }
+
   async getOrderById(
     orderId: number,
     user: { id: number; email: string },

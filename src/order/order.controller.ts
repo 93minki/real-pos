@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -38,6 +39,16 @@ export class OrderController {
   async getTodayOrders(@Req() req: Request) {
     const user = req.user as { id: number; email: string };
     return this.orderService.getTodayOrders(user);
+  }
+
+  @Get('monthly')
+  async getMonthlyOrders(
+    @Req() req: Request,
+    @Query('year') year: number,
+    @Query('month') month: number,
+  ) {
+    const user = req.user as { id: number; email: string };
+    return this.orderService.getMonthlyOrders(user, year, month);
   }
 
   // 내 주문 단건 조회
