@@ -1,7 +1,6 @@
 import {
   Body,
   Controller,
-  Delete,
   Get,
   Param,
   Patch,
@@ -40,12 +39,5 @@ export class MenuController {
   ) {
     const user = req.user as { id: number; email: string };
     return this.menuService.updateMenu(user, +id, dto);
-  }
-
-  @Delete(':id')
-  async deleteMenu(@Req() req: Request, @Param('id') id: string) {
-    const user = req.user as { id: number; email: string };
-    await this.menuService.deleteMenu(user, +id);
-    return { message: '삭제 완료' };
   }
 }
