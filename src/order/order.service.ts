@@ -10,6 +10,7 @@ import { OrderItem } from 'src/order-item/order-item.entity';
 import { Between, Repository } from 'typeorm';
 import { CreateOrderDto, UpdateOrderDto } from './order.dto';
 import { Order, OrderStatus } from './order.entity';
+import { OrderSseService } from './order.sse.service';
 
 @Injectable()
 export class OrderService {
@@ -20,6 +21,7 @@ export class OrderService {
     private readonly orderItemRepository: Repository<OrderItem>,
     @InjectRepository(Menu)
     private readonly menuRepository: Repository<Menu>,
+    private readonly orderSseService: OrderSseService,
   ) {}
 
   async createOrder(
@@ -47,6 +49,8 @@ export class OrderService {
       }),
     );
     await this.orderItemRepository.save(orderItems);
+
+    this.orderSseService.sendOrderAddedEvent(user.id.toString());
 
     return this.orderRepository.findOne({
       where: { id: saveOrder.id },
