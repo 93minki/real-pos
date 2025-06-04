@@ -34,24 +34,18 @@ export class AuthController {
       const isProd =
         this.configService.get<string>('NODE_ENV') === 'production';
 
-      // Cross-origin 환경을 위한 쿠키 설정
-      const cookieOptions = {
-        httpOnly: true,
-        secure: isProd, // HTTPS에서만 전송
-        sameSite: isProd ? ('none' as const) : ('lax' as const), // Cross-origin 허용
-        domain: isProd ? undefined : undefined, // 프로덕션에서는 도메인 제한 없음
-        path: '/', // 모든 경로에서 접근 가능
-      };
-
       res.cookie('accessToken', accessToken, {
-        ...cookieOptions,
-        maxAge: 1000 * 60 * 15, // 15분
+        httpOnly: true,
+        secure: isProd,
+        sameSite: 'lax',
+        maxAge: 1000 * 60 * 15,
       });
       res.cookie('refreshToken', refreshToken, {
-        ...cookieOptions,
-        maxAge: 1000 * 60 * 60 * 24 * 7, // 7일
+        httpOnly: true,
+        secure: isProd,
+        sameSite: 'lax',
+        maxAge: 1000 * 60 * 60 * 24 * 7,
       });
-
       res.json({
         code: 'OK',
         message: '로그인 성공',
@@ -76,25 +70,19 @@ export class AuthController {
       if (result.code === 'OK') {
         const isProd =
           this.configService.get<string>('NODE_ENV') === 'production';
-
-        // Cross-origin 환경을 위한 쿠키 설정
-        const cookieOptions = {
-          httpOnly: true,
-          secure: isProd,
-          sameSite: isProd ? ('none' as const) : ('lax' as const),
-          domain: isProd ? undefined : undefined,
-          path: '/',
-        };
-
         if (result.refreshToken) {
           res.cookie('refreshToken', result.refreshToken, {
-            ...cookieOptions,
+            httpOnly: true,
+            secure: isProd,
+            sameSite: 'lax',
             maxAge: 1000 * 60 * 60 * 24 * 7,
           });
         }
         if (result.accessToken) {
           res.cookie('accessToken', result.accessToken, {
-            ...cookieOptions,
+            httpOnly: true,
+            secure: isProd,
+            sameSite: 'lax',
             maxAge: 1000 * 60 * 15,
           });
         }
