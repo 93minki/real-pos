@@ -40,6 +40,7 @@ export class AuthController {
         secure: isProd, // HTTPS에서만 전송
         sameSite: isProd ? ('none' as const) : ('lax' as const), // Cross-origin 허용
         domain: isProd ? undefined : undefined, // 프로덕션에서는 도메인 제한 없음
+        path: '/', // 모든 경로에서 접근 가능
       };
 
       res.cookie('accessToken', accessToken, {
@@ -82,6 +83,7 @@ export class AuthController {
           secure: isProd,
           sameSite: isProd ? ('none' as const) : ('lax' as const),
           domain: isProd ? undefined : undefined,
+          path: '/',
         };
 
         if (result.refreshToken) {
