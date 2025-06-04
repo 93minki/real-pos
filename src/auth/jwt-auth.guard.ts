@@ -9,8 +9,14 @@ import { AuthGuard } from '@nestjs/passport';
 export class JwtAuthGuard extends AuthGuard('jwt') {
   canActivate(context: ExecutionContext) {
     const request = context.switchToHttp().getRequest();
-    console.log('JWT Guard - Cookies:', request.cookies);
-    console.log('JWT Guard - Access Token:', request.cookies?.accessToken);
+    console.log('=== JWT Guard Debug ===');
+    console.log('Origin:', request.headers.origin);
+    console.log('User-Agent:', request.headers['user-agent']);
+    console.log('Cookie Header:', request.headers.cookie);
+    console.log('All Headers:', JSON.stringify(request.headers, null, 2));
+    console.log('Parsed Cookies:', request.cookies);
+    console.log('Access Token:', request.cookies?.accessToken);
+    console.log('=======================');
 
     return super.canActivate(context);
   }
