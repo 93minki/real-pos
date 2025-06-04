@@ -27,7 +27,7 @@ import { UserModule } from './user/user.module';
         database: configService.get<string>('DB_NAME', 'real_pos'),
         entities: [User, Menu, Order, OrderItem],
         synchronize: true,
-        logging: true,
+        logging: false,
         charset: 'utf8mb4_unicode_ci',
       }),
       inject: [ConfigService],

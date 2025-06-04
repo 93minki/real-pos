@@ -5,7 +5,6 @@ import { AuthService } from './auth.service';
 import { SigninDto } from './dto/login.dto';
 import { SignupDto } from './dto/signup.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
-import { RefreshTokenGuard } from './refresh-token.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -35,6 +34,12 @@ export class AuthController {
       const isProd =
         this.configService.get<string>('NODE_ENV') === 'production';
 
+      res.cookie('accessToken', accessToken, {
+        httpOnly: true,
+        secure: isProd,
+        sameSite: 'lax',
+        maxAge: 1000 * 60 * 15,
+      });
       res.cookie('refreshToken', refreshToken, {
         httpOnly: true,
         secure: isProd,
@@ -44,11 +49,6 @@ export class AuthController {
       res.json({
         code: 'OK',
         message: '로그인 성공',
-        accessToken,
-        user: {
-          id: user.id,
-          eamil: user.email,
-        },
       });
     } catch (error) {
       res.json({
@@ -59,33 +59,47 @@ export class AuthController {
   }
 
   @Post('refresh')
-  @UseGuards(RefreshTokenGuard)
   async refresh(
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
     try {
-      const user = req.user as any;
-      const oldRefreshToken = req.cookies['refreshToken'];
-      const { accessToken, refreshToken } = await this.authService.refresh(
-        user,
-        oldRefreshToken,
-      );
-      const isProd =
-        this.configService.get<string>('NODE_ENV') === 'production';
-
-      res.cookie('refreshToken', refreshToken, {
-        httpOnly: true,
-        secure: isProd,
-        sameSite: 'lax',
-        maxAge: 1000 * 60 * 60 * 24 * 7,
-      });
-      res.json({ code: 'OK', message: '토큰 갱신 성공', accessToken });
+      console.log('refresh');
+      const refreshToken = req.cookies['refreshToken'];
+      const result = await this.authService.refreshWithToken(refreshToken);
+      if (result.code === 'OK') {
+        const isProd =
+          this.configService.get<string>('NODE_ENV') === 'production';
+        if (result.refreshToken) {
+          res.cookie('refreshToken', result.refreshToken, {
+            httpOnly: true,
+            secure: isProd,
+            sameSite: 'lax',
+            maxAge: 1000 * 60 * 60 * 24 * 7,
+          });
+        }
+        if (result.accessToken) {
+          res.cookie('accessToken', result.accessToken, {
+            httpOnly: true,
+            secure: isProd,
+            sameSite: 'lax',
+            maxAge: 1000 * 60 * 15,
+          });
+        }
+        res.json({
+          code: 'OK',
+          message: '토큰 갱신 성공',
+          user: result.user,
+        });
+      } else {
+        res.clearCookie('accessToken');
+        res.clearCookie('refreshToken');
+        res.status(401).json({ code: 'FAIL', message: '재로그인 필요' });
+      }
     } catch (error) {
-      res.json({
-        code: 'FAIL',
-        message: `토큰 갱신 실패: ${error.message}`,
-      });
+      res.clearCookie('accessToken');
+      res.clearCookie('refreshToken');
+      res.status(401).json({ code: 'FAIL', message: '재로그인 필요' });
     }
   }
 
@@ -95,6 +109,7 @@ export class AuthController {
     try {
       const user = req.user as any;
       await this.authService.logout(user.id);
+      res.clearCookie('accessToken');
       res.clearCookie('refreshToken');
       res.json({ code: 'OK', message: '로그아웃 성공' });
     } catch (error) {

@@ -40,15 +40,4 @@ export class MenuService {
     Object.assign(menu, dto);
     return this.menuRepository.save(menu);
   }
-
-  async deleteMenu(
-    user: { id: number; email: string },
-    menuId: number,
-  ): Promise<void> {
-    const menu = await this.menuRepository.findOne({
-      where: { id: menuId, user: { id: user.id } },
-    });
-    if (!menu) throw new NotFoundException('메뉴 없음');
-    await this.menuRepository.delete(menuId);
-  }
 }

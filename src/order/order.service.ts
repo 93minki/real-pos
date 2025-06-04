@@ -7,9 +7,10 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { plainToInstance } from 'class-transformer';
 import { Menu } from 'src/menu/menu.entity';
 import { OrderItem } from 'src/order-item/order-item.entity';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import { CreateOrderDto, UpdateOrderDto } from './order.dto';
-import { Order } from './order.entity';
+import { Order, OrderStatus } from './order.entity';
+import { OrderSseService } from './order.sse.service';
 
 @Injectable()
 export class OrderService {
@@ -18,6 +19,9 @@ export class OrderService {
     private readonly orderRepository: Repository<Order>,
     @InjectRepository(OrderItem)
     private readonly orderItemRepository: Repository<OrderItem>,
+    @InjectRepository(Menu)
+    private readonly menuRepository: Repository<Menu>,
+    private readonly orderSseService: OrderSseService,
   ) {}
 
   async createOrder(
@@ -30,14 +34,23 @@ export class OrderService {
     });
     const saveOrder = await this.orderRepository.save(order);
 
-    const orderItems = dto.items.map((itemDto) =>
-      this.orderItemRepository.create({
-        order: saveOrder,
-        menu: { id: itemDto.menuId } as Menu,
-        quantity: itemDto.quantity,
+    const orderItems = await Promise.all(
+      dto.items.map(async (itemDto) => {
+        const menu = await this.menuRepository.findOneBy({
+          id: itemDto.menuId,
+        });
+        if (!menu) throw new NotFoundException('메뉴를 찾을 수 없습니다.');
+        return this.orderItemRepository.create({
+          order: saveOrder,
+          menu,
+          quantity: itemDto.quantity,
+          price: menu.price * itemDto.quantity,
+        });
       }),
     );
     await this.orderItemRepository.save(orderItems);
+
+    this.orderSseService.sendOrderAddedEvent(user.id.toString());
 
     return this.orderRepository.findOne({
       where: { id: saveOrder.id },
@@ -48,6 +61,38 @@ export class OrderService {
   async getOrders(user: { id: number; email: string }): Promise<Order[]> {
     return this.orderRepository.find({
       where: { user: { id: user.id } },
+      relations: ['items', 'items.menu'],
+      order: { created_at: 'DESC' },
+    });
+  }
+
+  async getTodayOrders(user: { id: number; email: string }): Promise<Order[]> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    return this.orderRepository.find({
+      where: {
+        user: { id: user.id },
+        created_at: Between(today, tomorrow),
+      },
+      relations: ['items', 'items.menu'],
+      order: { created_at: 'DESC' },
+    });
+  }
+
+  async getMonthlyOrders(
+    user: { id: number; email: string },
+    year: number,
+    month: number,
+  ): Promise<Order[]> {
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0);
+    return this.orderRepository.find({
+      where: {
+        user: { id: user.id },
+        created_at: Between(startDate, endDate),
+      },
       relations: ['items', 'items.menu'],
       order: { created_at: 'DESC' },
     });
@@ -68,6 +113,29 @@ export class OrderService {
     return plainToInstance(Order, order);
   }
 
+  async completeOrder(
+    orderId: number,
+    user: { id: number; email: string },
+  ): Promise<Order> {
+    const order = await this.orderRepository.findOne({
+      where: { id: orderId },
+      relations: ['user'],
+    });
+    if (!order) throw new NotFoundException('주문을 찾을 수 없습니다.');
+    if (order.user.id !== user.id)
+      throw new ForbiddenException('본인의 주문만 완료할 수 있습니다.');
+    if (order.status === 'COMPLETED')
+      throw new ForbiddenException('이미 완료된 주문입니다.');
+
+    order.status = OrderStatus.COMPLETED;
+
+    await this.orderRepository.save(order);
+    return this.orderRepository.findOne({
+      where: { id: orderId },
+      relations: ['items', 'items.menu'],
+    });
+  }
+
   async updateOrder(
     orderId: number,
     dto: UpdateOrderDto,
@@ -80,9 +148,30 @@ export class OrderService {
     if (!order) throw new NotFoundException('주문을 찾을 수 없습니다.');
     if (order.user.id !== user.id)
       throw new ForbiddenException('본인의 주문만 수정할 수 있습니다.');
+    if (order.status === 'COMPLETED')
+      throw new ForbiddenException('완료된 주문은 수정할 수 없습니다.');
 
-    Object.assign(order, dto);
-    await this.orderRepository.save(order);
+    console.log('dto??????', dto);
+
+    await this.orderItemRepository.delete({ order: { id: orderId } });
+
+    const newItems = await Promise.all(
+      dto.items.map(async (itemDto) => {
+        const menu = await this.menuRepository.findOneBy({
+          id: itemDto.menuId,
+        });
+        if (!menu) throw new NotFoundException('메뉴를 찾을 수 없습니다.');
+        return this.orderItemRepository.create({
+          order,
+          menu,
+          quantity: itemDto.quantity,
+          price: menu.price * itemDto.quantity,
+        });
+      }),
+    );
+    await this.orderItemRepository.save(newItems);
+
+    // 4. 최신 상태 반환
     return this.orderRepository.findOne({
       where: { id: orderId },
       relations: ['items', 'items.menu'],
