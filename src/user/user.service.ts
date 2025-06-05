@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import * as bcrypt from 'bcrypt';
 import { Repository } from 'typeorm';
 import { UpdateUserDto } from './user.dto';
 import { User } from './user.entity';
@@ -18,9 +19,17 @@ export class UserService {
     return user;
   }
 
-  async update(id: number, UpdateUserDto: UpdateUserDto): Promise<User> {
+  async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findOne(id);
-    Object.assign(user, UpdateUserDto);
+
+    // 패스워드가 변경되는 경우 bcrypt로 암호화
+    if (updateUserDto.password) {
+      const hashedPassword = await bcrypt.hash(updateUserDto.password, 10);
+      Object.assign(user, { ...updateUserDto, password: hashedPassword });
+    } else {
+      Object.assign(user, updateUserDto);
+    }
+
     await this.userRepository.save(user);
     return user;
   }

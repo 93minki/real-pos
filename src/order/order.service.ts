@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { plainToInstance } from 'class-transformer';
+import { instanceToPlain } from 'class-transformer';
 import { Menu } from 'src/menu/menu.entity';
 import { OrderItem } from 'src/order-item/order-item.entity';
 import { Between, Repository } from 'typeorm';
@@ -101,7 +101,7 @@ export class OrderService {
   async getOrderById(
     orderId: number,
     user: { id: number; email: string },
-  ): Promise<Order> {
+  ): Promise<any> {
     const order = await this.orderRepository.findOne({
       where: { id: orderId },
       relations: ['user', 'items', 'items.menu'],
@@ -110,7 +110,7 @@ export class OrderService {
     if (order.user.id !== user.id)
       throw new ForbiddenException('본인의 주문만 볼 수 있습니다.');
 
-    return plainToInstance(Order, order);
+    return instanceToPlain(order);
   }
 
   async completeOrder(
@@ -150,8 +150,6 @@ export class OrderService {
       throw new ForbiddenException('본인의 주문만 수정할 수 있습니다.');
     if (order.status === 'COMPLETED')
       throw new ForbiddenException('완료된 주문은 수정할 수 없습니다.');
-
-    console.log('dto??????', dto);
 
     await this.orderItemRepository.delete({ order: { id: orderId } });
 

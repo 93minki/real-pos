@@ -6,7 +6,6 @@ export class OrderSseService {
   private clients: Map<string, Set<Response>> = new Map();
 
   addClient(userId: string, res: Response) {
-    console.log('Adding client for user:', userId);
     if (!this.clients.has(userId)) {
       this.clients.set(userId, new Set());
     }
@@ -23,10 +22,8 @@ export class OrderSseService {
   }
 
   sendOrderAddedEvent(userId: string) {
-    console.log('Sending order added event to user:', userId);
     if (!this.clients.has(userId)) return;
     for (const res of this.clients.get(userId)) {
-      console.log('Sending event to client');
       res.write(`event: orderAdded\ndata: {}\n\n`);
     }
   }
