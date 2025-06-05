@@ -11,7 +11,6 @@ import { instanceToPlain } from 'class-transformer';
 import { Request } from 'express';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { UpdateUserDto } from './user.dto';
-import { User } from './user.entity';
 import { UserService } from './user.service';
 
 @Controller('user')
@@ -29,15 +28,17 @@ export class UserController {
   @Put('me')
   async updateProfile(
     @Req() req: Request,
-    @Body() UpdateUserDto: UpdateUserDto,
-  ): Promise<User> {
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<any> {
     const user = req.user as { id: number; email: string };
-    return this.userService.update(user.id, UpdateUserDto);
+    const userEntity = await this.userService.update(user.id, updateUserDto);
+    return instanceToPlain(userEntity);
   }
 
   @Delete('me')
-  async remove(@Req() req: Request): Promise<void> {
+  async remove(@Req() req: Request): Promise<any> {
     const user = req.user as { id: number; email: string };
-    return this.userService.remove(user.id);
+    await this.userService.remove(user.id);
+    return { message: '회원탈퇴 성공' };
   }
 }
