@@ -28,7 +28,7 @@ export class User {
   @Column({ type: 'varchar', length: 100 })
   store_name: string;
 
-  @Exclude()
+  @Expose()
   @Column({ type: 'varchar', length: 20, nullable: true })
   phone?: string;
 
