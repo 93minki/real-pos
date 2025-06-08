@@ -13,6 +13,7 @@ async function bootstrap() {
   });
   app.useGlobalPipes(new ValidationPipe());
   app.use(cookieParser());
-  await app.listen(8080);
+  const port = configService.get<number>('PORT', 8080);
+  await app.listen(port);
 }
 bootstrap();
