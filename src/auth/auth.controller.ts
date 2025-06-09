@@ -18,7 +18,7 @@ export class AuthController {
     try {
       await this.authService.signup(dto);
       return { code: 'OK', message: '회원가입 성공' };
-    } catch (error) {
+    } catch (error: any) {
       return { code: 'FAIL', message: `회원가입 실패: ${error.message}` };
     }
   }
@@ -29,8 +29,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     try {
-      const { accessToken, refreshToken, user } =
-        await this.authService.signin(dto);
+      const { accessToken, refreshToken } = await this.authService.signin(dto);
       const isProd =
         this.configService.get<string>('NODE_ENV') === 'production';
 
@@ -50,7 +49,7 @@ export class AuthController {
         code: 'OK',
         message: '로그인 성공',
       });
-    } catch (error) {
+    } catch (error: any) {
       res.json({
         code: 'FAIL',
         message: `로그인 실패: ${error.message}`,
@@ -111,7 +110,7 @@ export class AuthController {
       res.clearCookie('accessToken');
       res.clearCookie('refreshToken');
       res.json({ code: 'OK', message: '로그아웃 성공' });
-    } catch (error) {
+    } catch (error: any) {
       res.json({
         code: 'FAIL',
         message: `로그아웃 실패: ${error.message}`,
