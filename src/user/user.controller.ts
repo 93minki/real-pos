@@ -5,10 +5,11 @@ import {
   Get,
   Put,
   Req,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { instanceToPlain } from 'class-transformer';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { UpdateUserDto } from './user.dto';
 import { UserService } from './user.service';
@@ -36,9 +37,15 @@ export class UserController {
   }
 
   @Delete('me')
-  async remove(@Req() req: Request): Promise<any> {
-    const user = req.user as { id: number; email: string };
-    await this.userService.remove(user.id);
-    return { message: '회원탈퇴 성공' };
+  async remove(@Req() req: Request, @Res() res: Response): Promise<any> {
+    try {
+      const user = req.user as { id: number; email: string };
+      await this.userService.remove(user.id);
+      res.clearCookie('accessToken');
+      res.clearCookie('refreshToken');
+      res.json({ code: 'OK', message: '회원탈퇴 성공' });
+    } catch (error) {
+      res.json({ code: 'FAIL', message: '회원탈퇴 실패' });
+    }
   }
 }
