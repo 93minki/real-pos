@@ -23,7 +23,9 @@ export class OrderSseService {
 
   sendOrderAddedEvent(userId: string) {
     if (!this.clients.has(userId)) return;
-    for (const res of this.clients.get(userId)) {
+    const userClients = this.clients.get(userId);
+    if (!userClients) return;
+    for (const res of userClients) {
       res.write(`event: orderAdded\ndata: {}\n\n`);
     }
   }

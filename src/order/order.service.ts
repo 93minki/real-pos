@@ -55,7 +55,7 @@ export class OrderService {
     return this.orderRepository.findOne({
       where: { id: saveOrder.id },
       relations: ['items', 'items.menu'],
-    });
+    }) as Promise<Order>;
   }
 
   async getOrders(user: { id: number; email: string }): Promise<Order[]> {
@@ -133,7 +133,7 @@ export class OrderService {
     return this.orderRepository.findOne({
       where: { id: orderId },
       relations: ['items', 'items.menu'],
-    });
+    }) as Promise<Order>;
   }
 
   async updateOrder(
@@ -173,7 +173,7 @@ export class OrderService {
     return this.orderRepository.findOne({
       where: { id: orderId },
       relations: ['items', 'items.menu'],
-    });
+    }) as Promise<Order>;
   }
 
   async deleteOrder(

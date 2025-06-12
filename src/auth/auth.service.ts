@@ -83,7 +83,7 @@ export class AuthService {
   }
 
   async logout(userId: number) {
-    await this.userRepository.update(userId, { refreshToken: null });
+    await this.userRepository.update(userId, { refreshToken: undefined });
     return { message: 'Logged out' };
   }
 
@@ -106,6 +106,9 @@ export class AuthService {
       return { code: 'FAIL', message: '재로그인 필요' };
     }
     // RT 위조(서명은 맞지만 DB에 저장된 RT와 다름)
+    if (!dbUser.refreshToken) {
+      return { code: 'FAIL', message: '재로그인 필요' };
+    }
     const rtMatch = await bcrypt.compare(refreshToken, dbUser.refreshToken);
     if (!rtMatch) {
       return { code: 'FAIL', message: '재로그인 필요' };
@@ -145,7 +148,7 @@ export class AuthService {
         secret: this.configService.get('JWT_ACCESS_SECRET', 'dev-secret'),
       });
       return { code: 'OK', user: payload };
-    } catch (e) {
+    } catch (e: any) {
       if (e.name === 'TokenExpiredError') {
         return { code: 'FAIL', message: '토큰 만료' };
       } else {
