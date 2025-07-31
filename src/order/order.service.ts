@@ -88,6 +88,7 @@ export class OrderService {
   ): Promise<Order[]> {
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0);
+    endDate.setHours(23, 59, 59, 999);
     return this.orderRepository.find({
       where: {
         user: { id: user.id },
