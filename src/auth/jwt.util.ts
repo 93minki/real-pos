@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-var-requires */
 import { JwtPayload } from 'jsonwebtoken';
 
 export type TokenStatus = 'VALID' | 'EXPIRED' | 'UNKNOWN';
