@@ -120,17 +120,6 @@ yarn build
 yarn start:prod
 ```
 
-### 3. Docker를 이용한 실행
-
-```bash
-# Docker Compose로 전체 환경 실행 (MySQL 포함)
-docker-compose up -d
-
-# 또는 애플리케이션만 빌드 후 실행
-docker build -t real-pos-backend .
-docker run -p 8080:8080 real-pos-backend
-```
-
 ## 📡 API 엔드포인트
 
 ### 🔐 인증 (Auth)
@@ -186,37 +175,6 @@ DELETE /order-item/:id          # 주문 항목 삭제
 GET  /orders/sse?userId=:id     # 실시간 주문 알림 구독
 ```
 
-### 🏥 헬스체크
-
-```
-GET  /health           # 서버 상태 확인
-```
-
-## 🔧 개발 도구
-
-### 테스트 실행
-
-```bash
-# 단위 테스트
-yarn test
-
-# E2E 테스트
-yarn test:e2e
-
-# 테스트 커버리지
-yarn test:cov
-```
-
-### 코드 품질
-
-```bash
-# 린트 검사 및 자동 수정
-yarn lint
-
-# 코드 포맷팅
-yarn format
-```
-
 ## 🗄️ 데이터베이스 스키마
 
 ### Users (사용자)
@@ -265,41 +223,6 @@ Server-Sent Events(SSE)를 통해 다음과 같은 실시간 기능을 제공합
 1. **새 주문 알림**: 주문 생성 시 즉시 알림
 2. **주문 상태 변경**: 주문 완료 시 실시간 업데이트
 3. **다중 연결**: 여러 클라이언트 동시 지원
-4. **자동 재연결**: 연결 끊김 시 자동 복구
 
-```javascript
-// 프론트엔드에서 SSE 연결 예시
-const eventSource = new EventSource(`/orders/sse?userId=${userId}`);
-eventSource.onmessage = (event) => {
-  const data = JSON.parse(event.data);
-  console.log('새 주문:', data);
-};
-```
 
-## 🐳 배포
 
-### Docker 배포
-
-1. 이미지 빌드: `docker build -t real-pos-backend .`
-2. 컨테이너 실행: `docker run -p 8080:8080 real-pos-backend`
-
-### 환경별 설정
-
-- **개발**: `NODE_ENV=development`
-- **운영**: `NODE_ENV=production` (DB 동기화 비활성화)
-
-## 📄 라이선스
-
-이 프로젝트는 UNLICENSED 라이선스를 따릅니다.
-
-## 🤝 기여하기
-
-1. Fork 프로젝트
-2. Feature 브랜치 생성 (`git checkout -b feature/AmazingFeature`)
-3. 변경사항 커밋 (`git commit -m 'Add some AmazingFeature'`)
-4. 브랜치에 Push (`git push origin feature/AmazingFeature`)
-5. Pull Request 생성
-
----
-
-**Real POS Backend** - 현대적이고 확장 가능한 POS 시스템을 위한 RESTful API 서버
